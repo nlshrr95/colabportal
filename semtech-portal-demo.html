@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Semmtech Collaboration Portal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Semmtech Brand Colors */
+            --brand-teal: #1a3e43;
+            --brand-teal-hover: #132d31;
+            --brand-teal-light: #e8ecec;
+            --brand-green: #d4e6b5;
+
+            /* UI Colors */
+            --white: #ffffff;
+            --text-dark: #000000;
+            --text-gray: #4a4a4a;
+            --text-light: #737373;
+            --border-color: #e5e5e5;
+            --bg-gray: #f9f9f9;
+
+            /* Status Colors */
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+
+            /* Layout */
+            --topbar-height: 70px;
+            --sidebar-width: 260px;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--bg-gray);
+        }
+
+        /* Auth Page */
+        .auth-page {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--brand-teal);
+            position: relative;
+        }
+
+        .login-card {
+            background: var(--white);
+            padding: 40px 50px 50px;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .login-header h1 {
+            font-size: 24px;
+            color: var(--text-dark);
+            margin-bottom: 4px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+
+        .login-header p {
+            color: var(--text-light);
+            font-weight: 400;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--brand-teal);
+            box-shadow: 0 0 0 2px var(--brand-teal-light);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 24px;
+            border: 1px solid transparent;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            background: var(--text-dark);
+            color: var(--white);
+        }
+
+        .btn-primary:hover {
+            background: var(--text-gray);
+        }
+
+        .btn-outline {
+            background: transparent;
+            border-color: var(--text-dark);
+            color: var(--text-dark);
+        }
+
+        .btn-outline:hover {
+            background: var(--bg-gray);
+        }
+
+        /* Main Layout */
+        .app-container {
+            display: none;
+            min-height: 100vh;
+            flex-direction: column;
+        }
+
+        .app-container.active {
+            display: flex;
+        }
+
+        /* Top Bar - Fixed */
+        .top-bar {
+            background: var(--brand-teal);
+            height: var(--topbar-height);
+            padding: 0 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--white);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .top-bar-divider {
+            width: 1px;
+            height: 24px;
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .top-bar-title {
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: -0.2px;
+            color: var(--white);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--white);
+            color: var(--brand-teal);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        /* Sidebar - Fixed below Top Bar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--white);
+            border-right: 1px solid var(--border-color);
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            position: fixed;
+            height: calc(100vh - var(--topbar-height));
+            left: 0;
+            top: var(--topbar-height);
+            z-index: 900;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 24px 12px;
+            flex-grow: 1;
+        }
+
+        .menu-item {
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 500;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-gray);
+        }
+
+        .menu-item:hover {
+            background: var(--bg-gray);
+            color: var(--text-dark);
+        }
+
+        .menu-item.active {
+            background: var(--brand-teal-light);
+            color: var(--brand-teal);
+            font-weight: 600;
+        }
+
+        .logout-btn {
+            padding: 20px;
+            border-top: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-light);
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            transition: color 0.2s;
+        }
+
+        .logout-btn:hover {
+            color: var(--text-dark);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            margin-top: var(--topbar-height);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: var(--white);
+            min-height: calc(100vh - var(--topbar-height));
+        }
+
+        /* Page Content */
+        .page-content {
+            padding: 40px;
+            flex: 1;
+            overflow-y: auto;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .page {
+            display: none;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 500;
+            letter-spacing: -0.5px;
+            margin-bottom: 24px;
+            color: var(--text-dark);
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--text-dark);
+        }
+
+        /* Grid Layouts */
+        .split-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .info-card {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .info-list {
+            list-style: none;
+            flex-grow: 1;
+        }
+
+        .info-list li {
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .info-list li:last-child {
+            border-bottom: none;
+        }
+
+        .info-list li span.label {
+            color: var(--text-gray);
+            font-weight: 500;
+        }
+
+        .info-list li span.value {
+            color: var(--text-dark);
+            font-weight: 600;
+            text-align: right;
+        }
+
+        .map-wrapper {
+            width: 100%;
+            min-height: 250px;
+            height: 100%;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: var(--bg-gray);
+            padding: 24px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 400;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .stat-label {
+            color: var(--text-gray);
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        /* Table */
+        .table-container {
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table thead {
+            background: var(--bg-gray);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table th {
+            padding: 16px 24px;
+            text-align: left;
+            font-weight: 500;
+            color: var(--text-gray);
+            font-size: 13px;
+        }
+
+        .table td {
+            padding: 16px 24px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #E1F2E8;
+            color: #0A7B44;
+        }
+
+        .badge-warning {
+            background: #FEF3C7;
+            color: #92400E;
+        }
+
+        .badge-danger {
+            background: #FEE2E2;
+            color: #991B1B;
+        }
+
+        /* Publication Viewer */
+        .viewer-layout {
+            display: grid;
+            grid-template-columns: 250px 300px 1fr;
+            gap: 24px;
+            height: calc(100vh - 220px);
+        }
+
+        .viewer-panel {
+            background: var(--bg-gray);
+            border-radius: 8px;
+            padding: 24px;
+            overflow-y: auto;
+            border: 1px solid var(--border-color);
+        }
+
+        .panel-title {
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        .type-item {
+            padding: 10px 12px;
+            margin-bottom: 4px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--text-gray);
+            transition: all 0.2s;
+        }
+
+        .type-item:hover {
+            background: var(--border-color);
+        }
+
+        .type-item.active {
+            background: var(--brand-teal);
+            color: var(--white);
+        }
+
+        .instance-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+        }
+
+        .instance-item:hover {
+            border-color: var(--text-gray);
+        }
+
+        .instance-item.active {
+            border-color: var(--brand-teal);
+            box-shadow: 0 0 0 1px var(--brand-teal);
+        }
+
+        .property-list {
+            list-style: none;
+        }
+
+        .property-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 14px;
+        }
+
+        .property-item strong {
+            display: block;
+            color: var(--text-gray);
+            margin-bottom: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* SHACL Validator */
+        .upload-area {
+            background: var(--bg-gray);
+            border: 1px dashed var(--text-gray);
+            border-radius: 8px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .upload-area:hover {
+            background: var(--brand-teal-light);
+            border-color: var(--brand-teal);
+        }
+
+        .result-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .result-stat {
+            padding: 16px;
+            background: var(--bg-gray);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .error-item {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-left: 4px solid var(--border-color);
+            padding: 16px;
+            margin-bottom: 12px;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        /* RFC Module */
+        .rfc-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 24px;
+        }
+
+        .rfc-card {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rfc-card:hover {
+            border-color: var(--text-dark);
+        }
+
+        .rfc-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 16px;
+        }
+
+        .rfc-code {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 14px;
+        }
+
+        .rfc-title {
+            font-weight: 500;
+            margin-bottom: 12px;
+            color: var(--text-dark);
+            font-size: 16px;
+            line-height: 1.4;
+        }
+
+        .rfc-description {
+            color: var(--text-gray);
+            font-size: 14px;
+            margin-bottom: 24px;
+            line-height: 1.6;
+            flex-grow: 1;
+        }
+
+        .rfc-meta {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-bottom: 16px;
+        }
+
+        .rfc-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: auto;
+            border-top: 1px solid var(--border-color);
+            padding-top: 16px;
+        }
+
+        .rfc-actions button {
+            flex: 1;
+            padding: 8px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--white);
+            padding: 32px;
+            border-radius: 8px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 500;
+            margin-bottom: 24px;
+            color: var(--text-dark);
+            letter-spacing: -0.5px;
+        }
+
+        .modal-body {
+            margin-bottom: 32px;
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .viewer-layout {
+                grid-template-columns: 1fr;
+                height: auto;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .split-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .main-content {
+                margin-left: 200px;
+            }
+
+            .page-content {
+                padding: 24px;
+            }
+
+            .top-bar {
+                padding: 0 20px;
+            }
+
+            .top-bar-title {
+                display: none;
+            }
+
+            .top-bar-divider {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="authPage" class="auth-page">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="logo-container" style="justify-content: center; margin-bottom: 15px;">
+                    <img src="Logo-multi-color.svg" alt="Semmtech Logo" style="height: 36px;">
+                </div>
+                <h1>Data Collaboration Platform</h1>
+            </div>
+            <form onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" value="Bas Smit" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" value="Semmtech123" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top: 10px;">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="appContainer" class="app-container">
+
+        <div class="top-bar">
+            <div class="top-bar-left">
+                <img src="Logo-white.svg" alt="Semmtech Logo" style="height: 24px;">
+                <div class="top-bar-divider"></div>
+                <div class="top-bar-title">Collaboration Portal</div>
+            </div>
+            <div class="user-info">
+                <span id="userName"></span>
+                <div class="user-avatar">BS</div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <ul class="sidebar-menu">
+                <li class="menu-item active" onclick="showPage('dashboard')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="9"></rect>
+                        <rect x="14" y="3" width="7" height="5"></rect>
+                        <rect x="14" y="12" width="7" height="9"></rect>
+                        <rect x="3" y="16" width="7" height="5"></rect>
+                    </svg>
+                    Dashboard
+                </li>
+                <li class="menu-item" onclick="showPage('viewer')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                        <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                    Publication Viewer
+                </li>
+                <li class="menu-item" onclick="showPage('validator')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    Data Validator
+                </li>
+                <li class="menu-item" onclick="showPage('rfc')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                        <polyline points="14 2 14 8 20 8"></polyline>
+                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                        <polyline points="10 9 9 9 8 9"></polyline>
+                    </svg>
+                    Change Requests
+                </li>
+            </ul>
+            <div class="logout-btn" onclick="handleLogout()">Logout</div>
+        </div>
+
+        <div class="main-content">
+            <div class="page-content">
+
+                <div id="dashboard" class="page active">
+                    <h2 class="page-title">Project Overview</h2>
+
+                    <div class="split-grid">
+                        <div class="info-card">
+                            <div class="info-card-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="color: var(--brand-teal);">
+                                    <path
+                                        d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z">
+                                    </path>
+                                </svg>
+                                General Information
+                            </div>
+                            <ul class="info-list">
+                                <li>
+                                    <span class="label">Project Name</span>
+                                    <span class="value">A9 Highway Expansion</span>
+                                </li>
+                                <li>
+                                    <span class="label">Contractor Name</span>
+                                    <span class="value">Semmtech Infra B.V.</span>
+                                </li>
+                                <li>
+                                    <span class="label">Client Contact</span>
+                                    <span class="value">Rijkswaterstaat (RWS)</span>
+                                </li>
+                                <li>
+                                    <span class="label">Phase</span>
+                                    <span class="value"><span class="badge badge-warning"
+                                            style="background: var(--brand-teal-light); color: var(--brand-teal);">In
+                                            Execution</span></span>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="info-card" style="padding: 24px; display: flex; flex-direction: column;">
+                            <div class="info-card-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="color: var(--brand-teal);">
+                                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                    <circle cx="12" cy="10" r="3"></circle>
+                                </svg>
+                                Location
+                            </div>
+                            <div class="map-wrapper" style="flex-grow: 1;">
+                                <div id="dashboardMap" style="width: 100%; height: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 class="section-title">Submission Analytics</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value">42</div>
+                            <div class="stat-label">Total Submissions</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">38</div>
+                            <div class="stat-label">Valid Submissions</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">4</div>
+                            <div class="stat-label">Pending Review</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">2</div>
+                            <div class="stat-label">Rejected</div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Submitted By</th>
+                                    <th>Status</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-weight: 500;">infrastructure.ttl</td>
+                                    <td>John Doe</td>
+                                    <td><span class="badge badge-success">Valid</span></td>
+                                    <td>2024-04-12</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: 500;">project_schema.shacl</td>
+                                    <td>Jane Smith</td>
+                                    <td><span class="badge badge-success">Valid</span></td>
+                                    <td>2024-04-11</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight: 500;">data_model_v2.ttl</td>
+                                    <td>Bob Johnson</td>
+                                    <td><span class="badge badge-warning">Pending</span></td>
+                                    <td>2024-04-10</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="viewer" class="page">
+                    <h2 class="page-title">Publication Viewer</h2>
+                    <div class="viewer-layout">
+                        <div class="viewer-panel">
+                            <div class="panel-title">Subject Types</div>
+                            <div class="type-item active" onclick="selectType(this, 'Project')">Project</div>
+                            <div class="type-item" onclick="selectType(this, 'Specifications')">Specifications</div>
+                            <div class="type-item" onclick="selectType(this, 'Physical Object')">Physical Object</div>
+                            <div class="type-item" onclick="selectType(this, 'Activity')">Activity</div>
+                            <div class="type-item" onclick="selectType(this, 'Document')">Document</div>
+                            <div class="type-item" onclick="selectType(this, 'Agent')">Agent</div>
+                        </div>
+
+                        <div class="viewer-panel">
+                            <div class="panel-title">Instances</div>
+                            <input type="text" placeholder="Search..."
+                                style="width: 100%; padding: 10px 12px; border: 1px solid var(--border-color); border-radius: 6px; margin-bottom: 16px; font-family: inherit; font-size: 13px;">
+                            <div class="instance-item active" onclick="selectInstance(this)">A9 Highway Expansion</div>
+                        </div>
+
+                        <div class="viewer-panel">
+                            <div class="panel-title">Details</div>
+                            <ul class="property-list">
+                                <li class="property-item">
+                                    <strong>URI</strong>
+                                    <code
+                                        style="background: var(--white); border: 1px solid var(--border-color); padding: 4px 8px; border-radius: 4px; font-size: 12px;">http://semmtechinfra.com/project/A9highwayexpansion</code>
+                                </li>
+                                <li class="property-item">
+                                    <strong>Title</strong>
+                                    A9 Highway Expansion
+                                </li>
+                                <li class="property-item">
+                                    <strong>Description</strong>
+                                    The A9 Highway Expansion project is a major infrastructure development initiative
+                                    aimed at improving transportation efficiency and connectivity across the region. The
+                                    project involves the widening of the existing A9 highway, the construction of new
+                                    bridges and interchanges, and the implementation of smart traffic management
+                                    systems.
+                                    This initiative is expected to enhance regional connectivity, reduce travel times,
+                                    and
+                                    support economic growth by facilitating the movement of goods and people.
+                                </li>
+                                <li class="property-item">
+                                    <strong>Status</strong>
+                                    <span class="badge badge-success">Active</span>
+                                </li>
+                                <li class="property-item">
+                                    <strong>Start Date</strong>
+                                    2024-01-15
+                                </li>
+                                <li class="property-item">
+                                    <strong>Budget</strong>
+                                    €10,00,000
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="validator" class="page">
+                    <h2 class="page-title">Data Validator</h2>
+                    <div class="upload-area" onclick="alert('In real app, this would open file picker')">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"
+                            style="margin-bottom: 16px; color: var(--text-gray);">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <p style="font-weight: 500; margin-bottom: 8px;">Drop your TTL or SHACL files here</p>
+                        <p style="font-size: 13px; color: var(--text-light);">or click to browse from your computer</p>
+                    </div>
+
+                    <div class="split-grid" style="margin-top: 32px;">
+
+                        <div class="info-card">
+                            <div class="info-card-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="color: var(--brand-teal);">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                                Validation Results
+                            </div>
+
+                            <div class="result-summary">
+                                <div class="result-stat" style="border-top: 3px solid var(--success);">
+                                    <div class="stat-value" style="color: var(--success); font-size: 28px;">3</div>
+                                    <div class="stat-label" style="font-size: 11px;">Valid</div>
+                                </div>
+                                <div class="result-stat" style="border-top: 3px solid var(--warning);">
+                                    <div class="stat-value" style="color: var(--warning); font-size: 28px;">1</div>
+                                    <div class="stat-label" style="font-size: 11px;">Warnings</div>
+                                </div>
+                                <div class="result-stat" style="border-top: 3px solid var(--danger);">
+                                    <div class="stat-value" style="color: var(--danger); font-size: 28px;">1</div>
+                                    <div class="stat-label" style="font-size: 11px;">Errors</div>
+                                </div>
+                            </div>
+
+                            <div style="flex-grow: 1; margin-bottom: 24px;">
+                                <div class="error-item" style="border-left-color: var(--success);">
+                                    ✓ Object 001, 002, 004 conform to shape.
+                                </div>
+                                <div class="error-item" style="border-left-color: var(--warning);">
+                                    ⚠ Property 'dcterms:description' missing on Asset 003
+                                </div>
+                                <div class="error-item" style="border-left-color: var(--danger);">
+                                    ✕ Invalid Geometry bounds for Asset 005
+                                </div>
+                            </div>
+
+                            <button class="btn btn-outline" style="width: fit-content;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                Download Report
+                            </button>
+                        </div>
+
+                        <div class="info-card" style="padding: 24px; display: flex; flex-direction: column;">
+                            <div class="info-card-title">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    style="color: var(--brand-teal);">
+                                    <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+                                    <line x1="8" y1="2" x2="8" y2="18"></line>
+                                    <line x1="16" y1="6" x2="16" y2="22"></line>
+                                </svg>
+                                Spatial Validation Map
+                            </div>
+                            <div class="map-wrapper" style="flex-grow: 1;">
+                                <div id="validatorMap" style="width: 100%; height: 100%;"></div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div id="rfc" class="page">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                        <h2 class="page-title" style="margin-bottom: 0;">Change Requests</h2>
+                        <button class="btn btn-primary" onclick="openCreateRfc()">Create Request</button>
+                    </div>
+
+                    <div class="rfc-container">
+                        <div class="rfc-card">
+                            <div class="rfc-header">
+                                <span class="rfc-code">RFC-001</span>
+                                <span class="badge badge-success">Approved</span>
+                            </div>
+                            <div class="rfc-title">Update Infrastructure Ontology</div>
+                            <div class="rfc-description">
+                                Extend the current ontology to include new infrastructure types for smart city projects.
+                            </div>
+                            <div class="rfc-meta">
+                                John Doe • 2024-04-10
+                            </div>
+                        </div>
+
+                        <div class="rfc-card">
+                            <div class="rfc-header">
+                                <span class="rfc-code">RFC-002</span>
+                                <span class="badge badge-warning">Pending</span>
+                            </div>
+                            <div class="rfc-title">Add Support for SKOS Concepts</div>
+                            <div class="rfc-description">
+                                Enable the platform to handle SKOS-based concept schemes and controlled vocabularies.
+                            </div>
+                            <div class="rfc-meta">
+                                Jane Smith • 2024-04-08
+                            </div>
+                            <div class="rfc-actions">
+                                <button class="btn btn-outline"
+                                    style="border-color: var(--success); color: var(--success);">Approve</button>
+                                <button class="btn btn-outline"
+                                    style="border-color: var(--danger); color: var(--danger);">Reject</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="createRfcModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Create New Request</div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>RFC Code</label>
+                    <input type="text" placeholder="e.g. RFC-005" required>
+                </div>
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" placeholder="Short descriptive title" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea placeholder="Provide detailed rationale..."
+                        style="width: 100%; height: 120px; padding: 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: inherit; font-size: 14px; resize: vertical;"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="createRfc()">Submit Request</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // Map Variables
+        let dashboardMap, validatorMap;
+        let mapsInitialized = false;
+
+        function initializeMaps() {
+            if (mapsInitialized) return;
+
+            // --- Dashboard Map Initialization ---
+            dashboardMap = L.map('dashboardMap').setView([52.330, 4.936], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(dashboardMap);
+
+            // Standard Marker for Dashboard Project center
+            L.marker([52.330, 4.936]).addTo(dashboardMap)
+                .bindPopup('<b>A9 Highway Expansion</b><br>Project Area Center');
+
+            // --- Validator Map Initialization ---
+            validatorMap = L.map('validatorMap').setView([52.330, 4.936], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(validatorMap);
+
+            // Colored Marker Icons using external CDN images
+            const greenIcon = new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+
+            const redIcon = new L.Icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+
+            // Add Markers representing Valid/Invalid Data Objects
+            L.marker([52.330, 4.936], { icon: greenIcon }).addTo(validatorMap).bindPopup('<b>Asset 001</b><br>Status: Valid');
+            L.marker([52.335, 4.940], { icon: greenIcon }).addTo(validatorMap).bindPopup('<b>Asset 002</b><br>Status: Valid');
+            L.marker([52.325, 4.930], { icon: redIcon }).addTo(validatorMap).bindPopup('<b>Asset 003</b><br>Status: Warning<br>Missing dcterms:description');
+            L.marker([52.332, 4.925], { icon: greenIcon }).addTo(validatorMap).bindPopup('<b>Asset 004</b><br>Status: Valid');
+            L.marker([52.328, 4.945], { icon: redIcon }).addTo(validatorMap).bindPopup('<b>Asset 005</b><br>Status: Failed<br>Invalid Geometry');
+
+            mapsInitialized = true;
+        }
+
+        // --- App Logic ---
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value;
+            document.getElementById('userName').textContent = username.charAt(0).toUpperCase() + username.slice(1) + ' User';
+            document.getElementById('authPage').style.display = 'none';
+            document.getElementById('appContainer').classList.add('active');
+
+            // Initialize maps shortly after layout renders
+            setTimeout(() => {
+                initializeMaps();
+                // Ensure the map on the currently active page sizes correctly
+                if (dashboardMap) dashboardMap.invalidateSize();
+            }, 100);
+        }
+
+        function handleLogout() {
+            document.getElementById('authPage').style.display = 'flex';
+            document.getElementById('appContainer').classList.remove('active');
+            document.getElementById('username').value = 'admin';
+            document.getElementById('password').value = 'admin';
+        }
+
+        function showPage(pageName) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+            document.getElementById(pageName).classList.add('active');
+            event.target.closest('.menu-item').classList.add('active');
+
+            // Force Leaflet to recalculate size when its container becomes visible
+            setTimeout(() => {
+                if (pageName === 'dashboard' && dashboardMap) dashboardMap.invalidateSize();
+                if (pageName === 'validator' && validatorMap) validatorMap.invalidateSize();
+            }, 50);
+        }
+
+        function selectType(element, type) {
+            document.querySelectorAll('.type-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        function selectInstance(element) {
+            document.querySelectorAll('.instance-item').forEach(item => item.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        function openCreateRfc() {
+            document.getElementById('createRfcModal').classList.add('active');
+        }
+
+        function closeModal() {
+            document.getElementById('createRfcModal').classList.remove('active');
+        }
+
+        function createRfc() {
+            alert('RFC submitted successfully.');
+            closeModal();
+        }
+
+        window.onclick = function (event) {
+            const modal = document.getElementById('createRfcModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+
+</html>
